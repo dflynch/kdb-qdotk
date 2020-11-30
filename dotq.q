@@ -1,89 +1,88 @@
 \d .q
 
-/ Atomic
-k)neg:-:                  / Negate
-k)not:~:                  / Not zero
-k)null:^:                 / Is null
-k)string:$:               / Cast to string
-k)reciprocal:%:           / Reciprocal
-k)floor:_:                / Round down 
-ceiling:{neg floor neg x} / Round up: negate x so that floor has the opposite effect, revert
-signum:{(x>0)-x<0}        / Sign: null or neg, zero and positive return -1i, 0i and 1i, respectively 
-/ - Infix
-and:&                                       / Lesser
-or:|                                        / Greater
-mod:{x-y*x div y}                           / Modulus
-xbar:{x*y div x:$[16h=abs type x;"j"$x;x]}  / Round down to the nearest multiple of x
-xlog:{log[y]%log x}                         / Logarithm: change of base law: log x (y) = ln(y) / ln(x)
+                                                      / Atomic
+k)neg:-:                                                / Negate
+k)not:~:                                                / Not zero
+k)null:^:                                               / Is null
+k)string:$:                                             / Cast to string
+k)reciprocal:%:                                         / Reciprocal
+k)floor:_:                                              / Round down 
+ceiling:{neg floor neg x}                               / Round up (negate x so that floor has the opposite effect, revert)
+signum:{(x>0)-x<0}                                      / Sign
+                                                      / Atomic - Infix
+and:&                                                   / Lesser
+or:|                                                    / Greater
+mod:{x-y*x div y}                                       / Modulus
+xbar:{x*y div x:$[16h=abs type x;"j"$x;x]}              / Round down to the nearest multiple of x
+xlog:{log[y]%log x}                                     / Logarithm (change of base law: log x (y) = ln(y) / ln(x))
 
-/ Aggregate
-k)count:#:                                        / Number of items
-k)first:*:                                        / First item
-svar:{(n*var x)%(neg 1)+n:(count x)-sum null x}   / Sample variance: ignoring nulls, svar = ( n / n - 1 ) * var
-sdev:{sqrt svar x}                                / Sample standard deviation
-med:{avg x(iasc x)floor .5*(neg 1;0)+count x,:()} / Median: middlesmost indices applied to indices for sorting, applied to x and averaged
-all:min"b"$                                       / Everything is true (non-zero)
-any:max"b"$                                       / Anything is true (non-zero)
-/ - Infix
-scov:{(n*cov[x;y])%(neg 1)+n:(count x)-sum null x+y}  / Sample covariance: ignoring nulls, scov = ( n / n - 1 ) * cov(x,y)
+                                                      / Aggregate
+k)count:#:                                              / Number of items
+k)first:*:                                              / First item
+svar:{(n*var x)%(neg 1)+n:(count x)-sum null x}         / Sample variance: ignoring nulls, svar = ( n / n - 1 ) * var
+sdev:{sqrt svar x}                                      / Sample standard deviation
+med:{avg x(iasc x)floor .5*(neg 1;0)+count x,:()}       / Median
+all:min"b"$                                             / Everything is true (non-zero)
+any:max"b"$                                             / Anything is true (non-zero)
+                                                      / Aggregate - Infix
+scov:{(n*cov[x;y])%(neg 1)+n:(count x)-sum null x+y}    / Sample covariance (ignoring nulls, scov = ( n / n - 1 ) * cov(x,y))
 
-/ Uniform
-sums:+\                                           / Running totals
-prds:*\                                           / Running products
-mins:&\                                           / Running minimums
-maxs:|\                                           / Running maximums
-fills:^\                                          / Replace nulls with preceding non-nulls
-deltas:-':                                        / Differences between adjacent items
-ratios:%':                                        / Ratios between successive items
-avgs:{(sums x)%sums not null x}                   / Running totals divided by running counts (ignoring nulls)
-differ:{not(~)prior x}                            / Where list items change value (match now returns boolean making cast redundant)
-prev: :':                                         / Previous items in a list
-next:{$[0h>type x;'`rank;1_x,enlist x 0N]}        / Next items in a list (index using null to get null of correct type)
-reverse:|:                                        / Reverse order
-rank:{$[0h>type x;'`rank;<<x]}                    / Position in sorted list
-iasc:{$[0h>type x;'`rank;<x]}                     / Indexes required to sort in ascending order
-idesc:{$[0h>type x;'`rank;>x]}                    / Indexes required to sort in descending order
-asc:{                                             / Ascending sort
-  $[99h=type x;(key x)[i]!`s#r i:iasc r:value x;    / If dict, sort by value
-    `s=attr x;x;                                      / If sorted, return as is 
-    0h>type x;'`rank;                                 / If atom, throw error
-    `s#x iasc x]}                                     / Else, sort
-desc:{                                            / Descending sort
-  $[99h=type x;(key x)[i]!r i:idesc r:value x;      / If dict, sort by value
-    0h>type x;'`rank;                                 / If atom, throw error
-    x idesc x]}                                       / Else, sort
-/ - Infix
-msum:{                                                / x-item moving sums of y
-  $[99h=type y;(key y)!.z.s[x;value y];                 / If dict, apply self to value
-    y-(neg x)_(0i*x#y),y:sums y]}                         / Else, x-item moving sums = sums - x-shifted sums 
-mcount:{msum[x;not null y]}                           / x-item moving count of the non-null items of y
-mavg:{msum[x;0.0^y]%mcount[x;y]}                      / x-item moving averages of y
-mdev:{sqrt mavg[x;y*y]-m*m:mavg[x;y:"f"$y]}           / x-item moving deviations of y
-xrank:{$[0h>type y;'`rank;floor y*x%count y:rank y]}  / Group by value: scale rank value by buckets per item 
-mmin:{(x-1)prior[and;]/y}                             / x-item moving minimums of y
-mmax:{(x-1)prior[or;]/y}                              / x-item moving maximums of y
-xprev:{$[0h>type y;'`rank;y(til count y)-x]}          / Shift indices by x and apply to y
-rotate:{                                              / Shift list items left or right
-  $[0h>type y;'`rank;                                   / If atom, throw error
-    98h<type y;'`type;                                    / If dict, function, iterator or derived funciton, throw error
-    count y;raze reverse(0;x mod count y)cut y;           / If positive count, rotate
-    y]}                                                   / Else i.e. empty list, return as is
-ema:{(first y)(1f-x)\x*y}                             / Exponential moving average
+                                                      / Uniform
+sums:+\                                                 / Running totals
+prds:*\                                                 / Running products
+mins:&\                                                 / Running minimums
+maxs:|\                                                 / Running maximums
+fills:^\                                                / Replace nulls with preceding non-nulls
+deltas:-':                                              / Differences between adjacent items
+ratios:%':                                              / Ratios between successive items
+avgs:{(sums x)%sums not null x}                         / Running totals divided by running counts (ignoring nulls)
+differ:{not(~)prior x}                                  / Where list items change value (match now returns boolean making cast redundant)
+prev: :':                                               / Previous items in a list
+next:{$[0h>type x;'`rank;1_x,enlist x 0N]}              / Next items in a list (index using null to get null of correct type)
+reverse:|:                                              / Reverse order
+rank:{$[0h>type x;'`rank;<<x]}                          / Position in sorted list
+iasc:{$[0h>type x;'`rank;<x]}                           / Indexes required to sort in ascending order
+idesc:{$[0h>type x;'`rank;>x]}                          / Indexes required to sort in descending order
+asc:{                                                   / Ascending sort
+  $[99h=type x;(key x)[i]!`s#r i:iasc r:value x;          / If dict, sort by value
+    `s=attr x;x;                                            / If sorted, return as is 
+    0h>type x;'`rank;                                       / If atom, throw error
+    `s#x iasc x]}                                           / Else, sort
+desc:{                                                  / Descending sort
+  $[99h=type x;(key x)[i]!r i:idesc r:value x;            / If dict, sort by value
+    0h>type x;'`rank;                                       / If atom, throw error
+    x idesc x]}                                             / Else, sort
+                                                      / Uniform - Infix
+msum:{                                                  / x-item moving sums of y
+  $[99h=type y;(key y)!.z.s[x;value y];                   / If dict, apply self to value
+    y-(neg x)_(0i*x#y),y:sums y]}                           / Else, x-item moving sums = sums - x-shifted sums 
+mcount:{msum[x;not null y]}                             / x-item moving count of the non-null items of y
+mavg:{msum[x;0.0^y]%mcount[x;y]}                        / x-item moving averages of y
+mdev:{sqrt mavg[x;y*y]-m*m:mavg[x;y:"f"$y]}             / x-item moving deviations of y
+xrank:{$[0h>type y;'`rank;floor y*x%count y:rank y]}    / Group by value (scale rank value by buckets per item) 
+mmin:{(x-1)prior[and;]/y}                               / x-item moving minimums of y
+mmax:{(x-1)prior[or;]/y}                                / x-item moving maximums of y
+xprev:{$[0h>type y;'`rank;y(til count y)-x]}            / Shift indices by x and apply to y
+rotate:{                                                / Shift list items left or right
+  $[0h>type y;'`rank;                                     / If atom, throw error
+    98h<type y;'`type;                                      / If dict, function, iterator or derived funciton, throw error
+    count y;raze reverse(0;x mod count y)cut y;             / If positive count, rotate
+    y]}                                                     / Else i.e. empty list, return as is
+ema:{(first y)(1f-x)\x*y}                               / Exponential moving average
 
-/ TODO - below this line
-/ Other
-distinct:?:
-group:=:
-where:&:
-flip:+:
-type:@:
-key:!:
-value:get:.:
-attr:-2!
-raze:,/
-rand:{first 1?x} / Numeric atom in the range [0,x)
-til:{$[0>@x;!x;'`type]}
-/ - Infix
+                                                      / Other
+distinct:?:                                             / Unique items
+group:=:                                                / Dictionary mapping distinct items to indices
+where:&:                                                / Copies of indices
+flip:+:                                                 / Transpose
+type:@:                                                 / Datatype of an object
+key:!:                                                  / Depends on the argument, see man pages
+value:get:.:                                            / Depends on the argument, see man pages
+attr:-2!                                                / Attributes of an object
+raze:,/                                                 / Join items i.e. collapse one level of nesting
+rand:{first 1?x}                                        / Numeric atom in the range [0,x)
+til:{$[0>@x;key x;'`type]}                              / Essentially, til is a cover on one application of key
+                                                      / Other - Infix
 cut:{$[0h>@x;x*!-_-(#y)%x;x]_y}
 set:{$[@x;.[x;();:;y];-19!((,y),x)]}
 upsert:.[;();,;] / :: ,: files?
