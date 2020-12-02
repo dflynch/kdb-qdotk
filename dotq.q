@@ -1,129 +1,132 @@
 \d .q
 
                                                       / Atomic
-k)neg:-:                                                / Negate
-k)not:~:                                                / Not zero
-k)null:^:                                               / Is null
-k)string:$:                                             / Cast to string
-k)reciprocal:%:                                         / Reciprocal
-k)floor:_:                                              / Round down 
-ceiling:{neg floor neg x}                               / Round up (negate x so that floor has the opposite effect, revert)
-signum:{(x>0)-x<0}                                      / Sign
+k)neg:-:                                              / Negate
+k)not:~:                                              / Not zero
+k)null:^:                                             / Is null
+k)string:$:                                           / Cast to string
+k)reciprocal:%:                                       / Reciprocal
+k)floor:_:                                            / Round down 
+ceiling:{neg floor neg x}                             / Round up (negate x so that floor has the opposite effect, revert)
+signum:{(x>0)-x<0}                                    / Sign
                                                       / Atomic - Infix
-and:&                                                   / Lesser
-or:|                                                    / Greater
-mod:{x-y*x div y}                                       / Modulus
-xbar:{x*y div x:$[16h=abs type x;"j"$x;x]}              / Round down to the nearest multiple of x
-xlog:{log[y]%log x}                                     / Logarithm (change of base law: log x (y) = ln(y) / ln(x))
+and:&                                                 / Lesser
+or:|                                                  / Greater
+mod:{x-y*x div y}                                     / Modulus
+xbar:{x*y div x:$[16h=abs type x;"j"$x;x]}            / Round down to the nearest multiple of x
+xlog:{log[y]%log x}                                   / Logarithm (change of base law: log x (y) = ln(y) / ln(x))
 
                                                       / Aggregate
-k)count:#:                                              / Number of items
-k)first:*:                                              / First item
-svar:{(n*var x)%(neg 1)+n:(count x)-sum null x}         / Sample variance: ignoring nulls, svar = ( n / n - 1 ) * var
-sdev:{sqrt svar x}                                      / Sample standard deviation
-med:{avg x(iasc x)floor .5*(neg 1;0)+count x,:()}       / Median
-all:min"b"$                                             / Everything is true (non-zero)
-any:max"b"$                                             / Anything is true (non-zero)
+k)count:#:                                            / Number of items
+k)first:*:                                            / First item
+svar:{(n*var x)%(neg 1)+n:(count x)-sum null x}       / Sample variance: ignoring nulls, svar = ( n / n - 1 ) * var
+sdev:{sqrt svar x}                                    / Sample standard deviation
+med:{avg x(iasc x)floor .5*(neg 1;0)+count x,:()}     / Median
+all:min"b"$                                           / Everything is true (non-zero)
+any:max"b"$                                           / Anything is true (non-zero)
                                                       / Aggregate - Infix
-scov:{(n*cov[x;y])%(neg 1)+n:(count x)-sum null x+y}    / Sample covariance (ignoring nulls, scov = ( n / n - 1 ) * cov(x,y))
+scov:{(n*cov[x;y])%(neg 1)+n:(count x)-sum null x+y}  / Sample covariance (ignoring nulls, scov = ( n / n - 1 ) * cov(x,y))
 
                                                       / Uniform
-sums:+\                                                 / Running totals
-prds:*\                                                 / Running products
-mins:&\                                                 / Running minimums
-maxs:|\                                                 / Running maximums
-fills:^\                                                / Replace nulls with preceding non-nulls
-deltas:-':                                              / Differences between adjacent items
-ratios:%':                                              / Ratios between successive items
-avgs:{(sums x)%sums not null x}                         / Running totals divided by running counts (ignoring nulls)
-differ:{not(~)prior x}                                  / Where list items change value (match now returns boolean making cast redundant)
-prev: :':                                               / Previous items in a list
-next:{$[0h>type x;'`rank;1_x,enlist x 0N]}              / Next items in a list (index using null to get null of correct type)
-reverse:|:                                              / Reverse order
-rank:{$[0h>type x;'`rank;<<x]}                          / Position in sorted list
-iasc:{$[0h>type x;'`rank;<x]}                           / Indexes required to sort in ascending order
-idesc:{$[0h>type x;'`rank;>x]}                          / Indexes required to sort in descending order
-asc:{                                                   / Ascending sort
-  $[99h=type x;(key x)[i]!`s#r i:iasc r:value x;          / If dict, sort by value
-    `s=attr x;x;                                            / If sorted, return as is 
-    0h>type x;'`rank;                                       / If atom, throw error
-    `s#x iasc x]}                                           / Else, sort
-desc:{                                                  / Descending sort
-  $[99h=type x;(key x)[i]!r i:idesc r:value x;            / If dict, sort by value
-    0h>type x;'`rank;                                       / If atom, throw error
-    x idesc x]}                                             / Else, sort
+sums:+\                                               / Running totals
+prds:*\                                               / Running products
+mins:&\                                               / Running minimums
+maxs:|\                                               / Running maximums
+fills:^\                                              / Replace nulls with preceding non-nulls
+deltas:-':                                            / Differences between adjacent items
+ratios:%':                                            / Ratios between successive items
+avgs:{(sums x)%sums not null x}                       / Running totals divided by running counts (ignoring nulls)
+differ:{not(~)prior x}                                / Where list items change value (match now returns boolean making cast redundant)
+prev: :':                                             / Previous items in a list
+next:{$[0h>type x;'`rank;1_x,enlist x 0N]}            / Next items in a list (index using null to get null of correct type)
+reverse:|:                                            / Reverse order
+rank:{$[0h>type x;'`rank;<<x]}                        / Position in sorted list
+iasc:{$[0h>type x;'`rank;<x]}                         / Indexes required to sort in ascending order
+idesc:{$[0h>type x;'`rank;>x]}                        / Indexes required to sort in descending order
+asc:{                                                 / Ascending sort
+  $[99h=type x;(key x)[i]!`s#r i:iasc r:value x;        / If dict, sort by value
+    `s=attr x;x;                                          / If sorted, return as is 
+    0h>type x;'`rank;                                     / If atom, throw error
+    `s#x iasc x]}                                         / Else, sort
+desc:{                                                / Descending sort
+  $[99h=type x;(key x)[i]!r i:idesc r:value x;          / If dict, sort by value
+    0h>type x;'`rank;                                     / If atom, throw error
+    x idesc x]}                                           / Else, sort
                                                       / Uniform - Infix
-msum:{                                                  / x-item moving sums of y
-  $[99h=type y;(key y)!.z.s[x;value y];                   / If dict, apply self to value
-    y-(neg x)_(0i*x#y),y:sums y]}                           / Else, x-item moving sums = sums - x-shifted sums 
-mcount:{msum[x;not null y]}                             / x-item moving count of the non-null items of y
-mavg:{msum[x;0.0^y]%mcount[x;y]}                        / x-item moving averages of y
-mdev:{sqrt mavg[x;y*y]-m*m:mavg[x;y:"f"$y]}             / x-item moving deviations of y
-xrank:{$[0h>type y;'`rank;floor y*x%count y:rank y]}    / Group by value (scale rank value by buckets per item) 
-mmin:{(x-1)prior[and;]/y}                               / x-item moving minimums of y
-mmax:{(x-1)prior[or;]/y}                                / x-item moving maximums of y
-xprev:{$[0h>type y;'`rank;y(til count y)-x]}            / Shift indices by x and apply to y
-rotate:{                                                / Shift list items left or right
-  $[0h>type y;'`rank;                                     / If atom, throw error
-    98h<type y;'`type;                                      / If dict, function, iterator or derived funciton, throw error
-    count y;raze reverse(0;x mod count y)cut y;             / If positive count, rotate
-    y]}                                                     / Else i.e. empty list, return as is
-ema:{(first y)(1f-x)\x*y}                               / Exponential moving average
+msum:{                                                / x-item moving sums of y
+  $[99h=type y;(key y)!.z.s[x;value y];                 / If dict, apply self to value
+    y-(neg x)_(0i*x#y),y:sums y]}                         / Else, x-item moving sums = sums - x-shifted sums 
+mcount:{msum[x;not null y]}                           / x-item moving count of the non-null items of y
+mavg:{msum[x;0.0^y]%mcount[x;y]}                      / x-item moving averages of y
+mdev:{sqrt mavg[x;y*y]-m*m:mavg[x;y:"f"$y]}           / x-item moving deviations of y
+xrank:{$[0h>type y;'`rank;floor y*x%count y:rank y]}  / Group by value (scale rank value by buckets per item) 
+mmin:{(x-1)prior[and;]/y}                             / x-item moving minimums of y
+mmax:{(x-1)prior[or;]/y}                              / x-item moving maximums of y
+xprev:{$[0h>type y;'`rank;y(til count y)-x]}          / Shift indices by x and apply to y
+rotate:{                                              / Shift list items left or right
+  $[0h>type y;'`rank;                                   / If atom, throw error
+    98h<type y;'`type;                                    / If dict, function, iterator or derived funciton, throw error
+    count y;raze reverse(0;x mod count y)cut y;           / If positive count, rotate
+    y]}                                                   / Else i.e. empty list, return as is
+ema:{(first y)(1f-x)\x*y}                             / Exponential moving average
 
                                                       / Other
-distinct:?:                                             / Unique items
-group:=:                                                / Dictionary mapping distinct items to indices
-where:&:                                                / Copies of indices
-flip:+:                                                 / Transpose
-type:@:                                                 / Datatype of an object
-key:!:                                                  / Depends on the argument, see man pages
-value:get:.:                                            / Depends on the argument, see man pages
-attr:-2!                                                / Attributes of an object
-raze:,/                                                 / Join items i.e. collapse one level of nesting
-rand:{first 1?x}                                        / Numeric atom in the range [0,x)
-til:{$[0>@x;key x;'`type]}                              / Essentially, til is a cover on one application of key
+distinct:?:                                           / Unique items
+group:=:                                              / Dictionary mapping distinct items to indices
+where:&:                                              / Copies of indices
+flip:+:                                               / Transpose
+type:@:                                               / Datatype of an object
+key:!:                                                / Depends on the argument, see man pages
+value:get:.:                                          / Depends on the argument, see man pages
+attr:-2!                                              / Attributes of an object
+raze:,/                                               / Join items i.e. collapse one level of nesting
+rand:{first 1?x}                                      / Numeric atom in the range [0,x)
+til:{$[0>@x;key x;'`type]}                            / Essentially, til is a cover on one application of key
                                                       / Other - Infix
-cut:{$[0h>@x;x*!-_-(#y)%x;x]_y}
-set:{$[@x;.[x;();:;y];-19!((,y),x)]}
-upsert:.[;();,;] / :: ,: files?
-sv:{x/:y}
-vs:{x\:y}
-union:?,
-inter:{x@&x in y}
-except:{x@&~x in y}
-cross:{n:#m:&(#x)##y;$[99h=@x;((!x)[m],'n#!y)!(. x)[m],'n#. y;((),x)[m],'n#y]} /extant:{x@&~^x}
-sublist:{$[99h=@y;sublist[x;!y]!sublist[x;. y];~0h>@x;$[.Q.qp y;.Q.ind[y];y]i+!"j"$0|x[1]&(#y)-i:*x;abs[x]<#y;x#y;y]}
+cut:{$[0h>type x;x*til ceiling(count y)%x;x]_y}       / Cut at index
+set:{$[type x;.[x;();:;y];-19!((enlist y),x)]}        / Assign to global variable, or persist to disk
+upsert:.[;();,;]                                      / Append to table
+sv:{x/:y}                                             / Scalar from vector
+vs:{x\:y}                                             / Vector from scalar
+union:{distinct x,y}                                  / Union of two lists
+inter:{x where x in y}                                / Intersection of two lists or dictionaries
+except:{x where not x in y}                           / Exclude items from list
+cross:{                                               / Cross-product
+  n:count m:where(count x)#count y;                     / y-copies of each index of x, and total count
+  $[99h=type x;                                         / If dict,
+    ((key x)[m],'n#key y)!(value x)[m],'n#value y;        / For both keys and values, join y-copies of each x with x*y take y
+    ((),x)[m],'n#y]}                                      / Else, as above but with lists
+sublist:{                                             / Head, tail or slice
+  $[99h=type y;sublist[x;key y]!sublist[x;value y];     / If dict, recurse for both key and value lists
+    not 0h>type x;                                        / If list i.e. slicing
+      $[.Q.qp y;.Q.ind[y;];y]                               / If partitioned table, project .Q.ind
+        i+til"j"$0 or x[1]and(count y)-i:first x;             / Incremental indices from first to first plus second x, or end
+    abs[x]<count y;x#y;                                   / If sufficient count from which to take, take
+    y]}                                                   / Else i.e. amount to take exceeds count, return as is
 
-// Apply monad to the items of its argument
-each:{x'y}
-// Covers for adverbs over and scan
-// If x is monadic, apply until convergence
-// If x is dyadic, fold by applying progressively between succesive items 
-over:{x/y}
-scan:{x\y}
-// Apply dyad to each item and the item preceding it
-prior:{x':y}
+                                                      / Adverbs
+each:{x'y}                                            / Apply monad to the items of its argument
+over:{x/y}                                            / If x is monadic, apply until convergence
+                                                        / If x is dyadic, fold by applying progressively between succesive items
+scan:{x\y}                                            / As above
+prior:{x':y}                                          / Apply dyad to each item and the item preceding it
 
-// Matrices
-// Multiply, dot product
-k)mmu:$
-// Least squares, divide
-k)lsq:!
-// Inverse
-k)inv:!:
+                                                      / Matrices
+k)mmu:$                                               / Multiply, dot product
+k)lsq:!                                               / Least squares, divide
+k)inv:!:                                              / Inverse
 
-// Hashes
-// Message digest hash
-md5:-15!
+                                                      / Hashes
+md5:-15!                                              / Message digest hash
 
-// Timezones
-// Local equivalent of UTC timestamp
-k)ltime:%:
-// UTC equivalent of local timestamp
-// Local time plus magnitude and direction of offset: x+x-ltime x
-// The second part must cover an edge case that I can't think of right now
-gtime:{t+x-ltime t:x+x-ltime x}
+                                                      / Timezones
+k)ltime:%:                                            / Local equivalent of UTC timestamp
+gtime:{t+x-ltime t:x+x-ltime x}                         / UTC equivalent of local timestamp
+                                                        / Local time plus magnitude and direction of offset: x+x-ltime x
+                                                        / The second part must cover an edge case that I can't think of right now
 
+/ TODO: After this line
+/
 /file&comm
 read0:0::;read1:1::;hclose:>:;hdel:~:;hsym:"s"$-1!';hcount:-7!;peach:{x':y};system:."\\",
 
