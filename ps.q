@@ -59,7 +59,9 @@ ps:{[t;c;b;a]                                   / partition select
         or(value a)~enlist(count;`i)];                / or count of the virtual column only, 1
     f:key a;                                      / then get the name of the aggregated column
     j:dt[d]t;                                     / then get partition counts
-    if[q;:+f!,$[g;?d@&0<j;,+/j]];
+    if[q;:flip f!enlist                           / then if boolean grouping
+      $[g;distinct d where 0<j;                     / if aggregation concerns partition field, partition values with counts greater than zero
+        enlist sum j]];                               / else, sum of all partition counts
     if[v&1=#b;:?[+(pf,f)!(d;j)[;&0<j];();b;f!,(sum;*f)]]];
   if[~#d;d:pv@&pv=*|pv;c:,()];
   f:$[q;0#`;!b];
