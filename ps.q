@@ -1,6 +1,10 @@
 \d .Q
-a0:(#:;*:;last;sum;prd;min;max;.q.all;.q.any;?:),a1:(avg;wsum;wavg;var;dev;cov;cor),`.q `svar`sdev`scov`med
-IN:{$[99h<@x;x in y;0]};qa:{$[qb x;0;IN[*x;a0];1;|/qa'1_x]};qb:{(2>#x)|(@x)&~11=@x}
+a0:(count;first;last;sum;prd;min;max;all;any;distinct),a1:(avg;wsum;wavg;var;dev;cov;cor;svar;sdev;scov;med)
+IN:{$[99h<type x;x in y;0]}                 / if x is a function, is it in the list of aggregate functions
+qa:{$[qb x;0;                               / if there's no aggregation to be done, 0
+  IN[first x;a0];1;                           / else-if aggregate function, 1 
+  max qa each 1_x]}                           / else, recurse into parse tree looking for aggregate functions
+qb:{(2>count x)or(type x)and not 11=type x} / single value or non-symbol list
 
 pt:pm:()                                    / partitioned tables, partitions mapped
 vt:(enlist`)!enlist()!()                    / virtual tables
@@ -52,7 +56,8 @@ ps:{[t;c;b;a]                                   / partition select
       type first c;0;                               / else-if first constraint is anything other than a list, 0
       -11h=type x:c[0]1;pf~first` vs x;             / else-if first constraint is on partition field, 1
       0];                                           / else, 0
-    d@:where eval first c;c:1_c];                 / then filter partition values
+    d@:where eval first c;                        / then filter partition values
+    c:1_c];                                       / then drop first constraint
   if[                                           / if..
     $[count c;0;                                  / if there are constraints on columns other than the partition field, 0
       (g:(value a)~enlist pf)                       / else, aggregation concerns partition field only.. 
@@ -62,10 +67,13 @@ ps:{[t;c;b;a]                                   / partition select
     if[q;:flip f!enlist                           / then if boolean grouping
       $[g;distinct d where 0<j;                     / if aggregation concerns partition field, partition values with counts greater than zero
         enlist sum j]];                               / else, sum of all partition counts
-    if[v&1=#b;:?[+(pf,f)!(d;j)[;&0<j];();b;f!,(sum;*f)]]];
-  if[~#d;d:pv@&pv=*|pv;c:,()];
-  f:$[q;0#`;!b];
-  g:$[#a;qa@*a;0];
+    if[v and 1=count b;                           / if the one and only grouping is on the partition field
+      :?[flip(pf,f)!(d;j)[;where 0<j];();b;f!enlist(sum;first f)]]]; / then select partition counts (note: sementation may not be date-based, hence sum)
+  if[not count d;                               / if there are no partitions to select from
+    d:pv where pv=last pv;                        / then set 'partition values' to the last partition (not sure why it's not d:last pv)
+    c:enlist()];                                  / then drop remaining constraints
+  f:$[q;0#`;key b];                             / groupings
+  g:$[count a;qa first a;0];                    / aggregate function on first column (why not check each?)
   $[(1=#d)|$[q;~g;u&pf~*. b];
     $[~q;.q.xkey[f];b;?:;::]foo[t;c;b;a;v]d;
     (?).(foo[t;c;$[q;()!();b];*a;v]d;();$[q;0b;f!f];*|a:$[g;ua a;(a;$[#a;(,/;)'k!k:!a;()])])]}
