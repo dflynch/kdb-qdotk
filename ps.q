@@ -28,7 +28,14 @@ cn:{
     pn[x]:(count p1 .)each flip(x;pd;pv)]}    / else, count each partition and append to partition count dictionary
 dt:{cn[y]where pv in x}                     / partition counts
 fp:{+((,*x)!,(#z)#$[-7h=@y;y;(*|x)$y]),+z}
-foo:{[t;c;b;a;v;d]if[v;g:*|`\:b f:*!b;b:1_b];,/$[v|~#a;d fp[$[v;f,g;pf]]';::]p[(.+t;c;b;a)]d}
+foo:{[t;c;b;a;v;d]              / t:table value, c:constraint, b:by, a:aggregation, v:is first grouping on partition field, d:partitions
+  if[v;                         / if first grouping is on the partition field
+    g:last` vs b f:first key b;   / then get partition field name and display name
+    b:1_b];                       / then drop first grouping
+  raze $[v or not count a;
+    d fp[$[v;f,g;pf]]';
+    ::]
+  p[(value flip t;c;b;a)]d}
 
 a2:({(%;(sum;("f"$;x));(sum;(~^:;x)))};{(sum;(*;("f"$;x);y))};{(%;(wsum;x;y);(sum;(*;x;(~^:;y))))};{(cov;x;x)};{(sqrt;(var;x))}
  {(-;(avg;(*;("f"$;x);y));(*;(avg;x);(avg;y)))};{(%;(cov;x;y);(*;(dev;x);(dev;y)))};{(.q.scov;x;x)};{(sqrt;(.q.svar;x))};{(*;(%;(#:;`i);(+;-1;(#:;`i)));(cov;x;y))};{'`part})
@@ -74,6 +81,8 @@ ps:{[t;c;b;a]                                   / partition select
     c:enlist()];                                  / then drop remaining constraints
   f:$[q;0#`;key b];                             / groupings
   g:$[count a;qa first a;0];                    / aggregate function on first column (why not check each?)
-  $[(1=#d)|$[q;~g;u&pf~*. b];
+  $[(1=count d)                                 / if one partition to query
+    or $[q;not g;                                 / or if boolean grouping and aggregate function not on first column
+      u and pf~first value b];                      / or if date-based segmentation and first grouping on partition field
     $[~q;.q.xkey[f];b;?:;::]foo[t;c;b;a;v]d;
     (?).(foo[t;c;$[q;()!();b];*a;v]d;();$[q;0b;f!f];*|a:$[g;ua a;(a;$[#a;(,/;)'k!k:!a;()])])]}
