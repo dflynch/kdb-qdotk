@@ -52,16 +52,16 @@ p2:{                                              / x:table name, y:partition di
 
 a0:(count;first;last;sum;prd;min;max;all;any;distinct),a1:(avg;wsum;wavg;var;dev;cov;cor;svar;sdev;scov;med)
 a2:(
-  {(%;(sum;("f"$;x));(sum;(~^:;x)))};
+  {(%;(sum;("f"$;x));(sum;(not null ::;x)))};
   {(sum;(*;("f"$;x);y))};
-  {(%;(wsum;x;y);(sum;(first;x;(~^:;y))))};
+  {(%;(wsum;x;y);(sum;(*;x;(not null ::;y))))};
   {(cov;x;x)};
   {(sqrt;(var;x))};
   {(-;(avg;(*;("f"$;x);y));(*;(avg;x);(avg;y)))};
   {(%;(cov;x;y);(*;(dev;x);(dev;y)))};
-  {(.q.scov;x;x)};
-  {(sqrt;(.q.svar;x))};
-  {(*;(%;(#:;`i);(+;-1;(#:;`i)));(cov;x;y))};
+  {(scov;x;x)};
+  {(sqrt;(svar;x))};
+  {(*;(%;(count;`i);(+;-1;(count;`i)));(cov;x;y))};
   {'`part})
 
 ua:{(
